@@ -1,5 +1,8 @@
 control:
-  repo_id: r5-4
+  repo_id: r5-push
   fps: 30
   num_episodes: 50
-  single_task: "Pick and place duck"
+  single_task: "Pick and place red box"
+
+policy:
+  model_path: "outputs/dp/train/r5_test2/checkpoints/060000/pretrained_model"

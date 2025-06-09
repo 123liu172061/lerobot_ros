@@ -62,12 +62,11 @@ class SevenDOFRobotConfig(ManipulatorRobotConfig):
             ]
         }
     )
-
     cameras: dict[str, CameraConfig] = field(
         default_factory=lambda: {
             "laptop": OpenCVCameraConfig(
                 camera_index=0,
-                fps=30,
+                fps=25,
                 width=640,
                 height=480,
             ),
@@ -82,16 +81,6 @@ class SevenDOFRobotConfig(ManipulatorRobotConfig):
 
     mock: bool = False
 
-    @classmethod
-    def from_dict(cls, config_dict):
-        """将 YAML 配置文件中的字典转换为 SevenDOFRobotConfig。"""
-        cameras = {
-            name: OpenCVCameraConfig(**cam_config)
-            for name, cam_config in config_dict.get("cameras", {}).items()
-        }
-        config_dict = config_dict.copy()
-        config_dict["cameras"] = cameras
-        return cls(**config_dict)
 
 #任务配置
 @dataclass
@@ -113,7 +102,7 @@ class RecordControlConfig:
     push_to_hub: bool = False
     tags: Optional[list] = None
     private: bool = False
-    play_sounds: bool = True  #语音
+    play_sounds: bool = False  #语音
 
 
 # 机器人获取数据实现
@@ -132,20 +121,6 @@ class ROS2Robot(Node):
         self.logs = {}
         self.is_connected = False
         self.callback_group = ReentrantCallbackGroup()
-
-
-        # self.motor_features = {
-        #     "observation.state": {"shape": (7,), "dtype": "float32"},
-        #     "action": {"shape": (7,), "dtype": "float32"}
-        # }
-        # self.observation_space = {
-        #     "observation.state": {"shape": (7,), "dtype": "float32"},
-        #     **{name: feat for name, feat in self.camera_features.items()}  # 使用 main_camera
-        # }
-        # self.action_space = {
-        #     "action": {"shape": (7,), "dtype": "float32"}
-        # }
-    
 
     #camera
     @property
@@ -242,25 +217,6 @@ class ROS2Robot(Node):
         if not record_data:
             return
 
-        # 从 /joint_states_target 读取目标位置（动作）
-        # leader_pos = {}
-        # for name in self.leader_arms:
-        #     before_lread_t = time.perf_counter()
-        #     try:
-        #         msg = self.wait_for_message("/joint_states_target", JointState, timeout=0.1)
-        #         if set(msg.name) != set(self.joint_names):
-        #             print("leader_pos position:", msg.position)#有值
-        #             pos_dict = dict(zip(msg.name, msg.position))
-        #             ordered_pos = [pos_dict.get(joint, 0.0) for joint in self.joint_names]
-        #             print("ordered_pos:",ordered_pos)  #全是0
-        #             leader_pos[name] = torch.tensor(ordered_pos, dtype=torch.float32)
-        #             print("leader_pos[name]:", leader_pos[name]) #全是0
-        #         else:
-        #             leader_pos[name] = torch.tensor(msg.position, dtype=torch.float32)
-        #     except TimeoutError:
-        #         self.get_logger().warn(f"Failed to read /joint_states_target for {name}")
-        #         leader_pos[name] = torch.zeros(len(self.joint_names), dtype=torch.float32)
-        #     self.logs[f"read_leader_{name}_pos_dt_s"] = time.perf_counter() - before_lread_t
         leader_pos = {}
         for name in self.leader_arms:
             before_lread_t = time.perf_counter()
@@ -538,8 +494,8 @@ def main():
             num_episodes=config["control"]["num_episodes"],
             single_task=config["control"]["single_task"],
             root=config["control"]["repo_id"],
-            episode_time_s=10.0,
-            warmup_time_s=5.0,
+            episode_time_s=20.0,
+            warmup_time_s=7.0,
             reset_time_s=5.0,
             resume=False,  # 默认创建新数据集
             video=True,

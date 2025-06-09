@@ -87,16 +87,6 @@ class SevenDOFRobotConfig(ManipulatorRobotConfig):
 
     mock: bool = False
 
-    @classmethod
-    def from_dict(cls, config_dict):
-        """将 YAML 配置文件中的字典转换为 SevenDOFRobotConfig。"""
-        cameras = {
-            name: OpenCVCameraConfig(**cam_config)
-            for name, cam_config in config_dict.get("cameras", {}).items()
-        }
-        config_dict = config_dict.copy()
-        config_dict["cameras"] = cameras
-        return cls(**config_dict)
 
 #任务配置
 @dataclass
@@ -182,7 +172,7 @@ class ROS2Robot(Node):
             },
             "observation.state": {
                 "dtype": "float32",
-                "shape": (len(state_names),),  # 3 个位置 + 3 个速度 = 6 维
+                "shape": (len(state_names),),  
                 "names": (state_names),
             },
         }
@@ -210,7 +200,7 @@ class ROS2Robot(Node):
         for name in self.cameras:
             self.cameras[name].disconnect()
 
-
+    # 核心数据通信
     def wait_for_message(self, topic, msg_type, timeout):
         future = Future()
         sub = self.create_subscription(
@@ -224,6 +214,7 @@ class ROS2Robot(Node):
         finally:
             self.destroy_subscription(sub)
 
+    # 核心数据通信
     def publish_once_message(self, topic, msg_type, msg, delay_sec=0.1):
         done = Future()
 
@@ -245,7 +236,7 @@ class ROS2Robot(Node):
             self.destroy_publisher(pub)
 
 
-
+    # 遥操作部分,推理脚本中无用
     def teleop_step(
         self, record_data=False
     ) -> None | tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]:
@@ -443,7 +434,7 @@ def record_episode(
         start_loop_t = time.perf_counter()
 
         time_inter=time.perf_counter()
-        if policy is not None:
+        if policy is not None:#如果有配置网络则进行推理
             # 网络推理
             observation = robot.capture_observation() 
             print("time_inter1:", time.perf_counter()-time_inter)
@@ -456,7 +447,7 @@ def record_episode(
             action = robot.send_action(pred_action)
             action = {"action": action}
             print("time_inter3:", time.perf_counter()-time_inter)
-        #采数据
+        #否则采数据，其实下面可以删掉，冗余了，因为采数据和推理脚本已经分开了
         else:
             observation, action = robot.teleop_step(record_data=True)
             if dataset is not None:
@@ -580,11 +571,11 @@ def record(
             single_task=cfg.single_task,
         )
 
-        # if not events["stop_recording"] and (
-        #     (recorded_episodes < cfg.num_episodes - 1) or events["rerecord_episode"]
-        # ):
-        #     log_say("Reset the environment", cfg.play_sounds)
-        #     #reset_environment(robot, events, cfg.reset_time_s, cfg.fps)
+        if not events["stop_recording"] and (
+            (recorded_episodes < cfg.num_episodes - 1) or events["rerecord_episode"]
+        ):
+            log_say("Reset the environment", cfg.play_sounds)
+            #reset_environment(robot, events, cfg.reset_time_s, cfg.fps)
 
         if events["rerecord_episode"]:
             log_say("Re-record episode", cfg.play_sounds)
@@ -618,7 +609,7 @@ def main():
         robot_cfg=SevenDOFRobotConfig()
         robot = ROS2Robot(robot_cfg)
 
-        policy_path = "outputs/train/r5_test2/checkpoints/060000/pretrained_model"
+        policy_path = config["policy"]["model_path"]
         policy_cfg = PreTrainedConfig.from_pretrained(policy_path)
         policy_cfg.pretrained_path = policy_path  # 手动加上字段以兼容 downstream 代码
 
@@ -636,8 +627,8 @@ def main():
             num_image_writer_processes=0,
             num_image_writer_threads_per_camera=4,
             display_data=False,
-            policy=policy_cfg,  # 
-            play_sounds=True,
+            policy=policy_cfg,  # 如果为None，则采集数据，若为policy_cfg，则为推理
+            play_sounds=False,
         )
 
         record(robot, cfg)
