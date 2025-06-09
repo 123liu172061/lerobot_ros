@@ -450,7 +450,7 @@ class ManipulatorRobot:
                 "ManipulatorRobot is not connected. You need to run `robot.connect()`."
             )
 
-        # Prepare to assign the position of the leader to the follower
+        # 读取领导者手臂位置
         leader_pos = {}
         for name in self.leader_arms:
             before_lread_t = time.perf_counter()
@@ -458,7 +458,7 @@ class ManipulatorRobot:
             leader_pos[name] = torch.from_numpy(leader_pos[name])
             self.logs[f"read_leader_{name}_pos_dt_s"] = time.perf_counter() - before_lread_t
 
-        # Send goal position to the follower
+        # 将主臂的当前关节位置作为从臂的目标位置发送给从臂
         follower_goal_pos = {}
         for name in self.follower_arms:
             before_fwrite_t = time.perf_counter()
@@ -478,12 +478,12 @@ class ManipulatorRobot:
             self.follower_arms[name].write("Goal_Position", goal_pos)
             self.logs[f"write_follower_{name}_goal_pos_dt_s"] = time.perf_counter() - before_fwrite_t
 
-        # Early exit when recording data is not requested
+        # 是否录制数据
         if not record_data:
             return
 
         # TODO(rcadene): Add velocity and other info
-        # Read follower position
+        # 读取从臂的关节位置
         follower_pos = {}
         for name in self.follower_arms:
             before_fread_t = time.perf_counter()
@@ -492,10 +492,11 @@ class ManipulatorRobot:
             self.logs[f"read_follower_{name}_pos_dt_s"] = time.perf_counter() - before_fread_t
 
         # Create state by concatenating follower current position
+        # 将每个手臂的当前位置（follower_pos[name]）添加到列表。使用 torch.cat 拼接所有位置张量，生成一维状态向量。
         state = []
         for name in self.follower_arms:
             if name in follower_pos:
-                state.append(follower_pos[name])
+                state.append(follower_pos[name])  
         state = torch.cat(state)
 
         # Create action by concatenating follower goal position

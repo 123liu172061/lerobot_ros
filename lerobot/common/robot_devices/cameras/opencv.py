@@ -429,7 +429,7 @@ class OpenCVCamera:
                 self.color_image = self.read()
             except Exception as e:
                 print(f"Error reading in thread: {e}")
-
+    # 异步获取图像
     def async_read(self):
         if not self.is_connected:
             raise RobotDeviceNotConnectedError(

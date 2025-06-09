@@ -1,0 +1,5 @@
+control:
+  repo_id: r5-4
+  fps: 30
+  num_episodes: 50
+  single_task: "Pick and place duck"

@@ -247,9 +247,13 @@ def control_loop(
         start_loop_t = time.perf_counter()
 
         if teleoperate:
+            # 采数据
             observation, action = robot.teleop_step(record_data=True)
+            print("?")
+
         else:
-            observation = robot.capture_observation()
+             # 网络推理
+            observation = robot.capture_observation()  
 
             if policy is not None:
                 pred_action = predict_action(

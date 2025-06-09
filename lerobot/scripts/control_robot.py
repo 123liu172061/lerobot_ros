@@ -277,7 +277,7 @@ def record(
     if not robot.is_connected:
         robot.connect()
 
-    listener, events = init_keyboard_listener()
+    listener, events = init_keyboard_listener()  # 按键监听
 
     # Execute a few seconds without recording to:
     # 1. teleoperate the robot to move it in starting position if no policy provided,
@@ -403,11 +403,11 @@ def _init_rerun(control_config: ControlConfig, session_name: str = "lerobot_cont
 
 
 @parser.wrap()
-def control_robot(cfg: ControlPipelineConfig):
+def control_robot(cfg: ControlPipelineConfig):   #配置参数有  如：1.robot: RobotConfig->So100RobotConfig   2.control: ControlConfig ->RecordControlConfig (例如录数据)
     init_logging()
     logging.info(pformat(asdict(cfg)))
 
-    robot = make_robot_from_config(cfg.robot)
+    robot = make_robot_from_config(cfg.robot)  # ManipulatorRobot
 
     # TODO(Steven): Blueprint for fixed window size
 

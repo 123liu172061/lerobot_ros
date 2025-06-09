@@ -490,7 +490,8 @@ class LeRobotDataset(torch.utils.data.Dataset):
         if self.episodes is not None and self.meta._version >= packaging.version.parse("v2.1"):
             episodes_stats = [self.meta.episodes_stats[ep_idx] for ep_idx in self.episodes]
             self.stats = aggregate_stats(episodes_stats)
-
+            print("asd")
+        
         # Load actual data
         try:
             if force_cache_sync:
@@ -831,7 +832,8 @@ class LeRobotDataset(torch.utils.data.Dataset):
                 self.episode_buffer[key].append(frame[key])
 
         self.episode_buffer["size"] += 1
-
+    
+    #这个函数就是把内存中积累的一整个 episode（图像 + 状态 + 任务 + 时间戳）完整地保存成结构化数据（视频 + Parquet + meta 信息），用于训练、回放或分析。
     def save_episode(self, episode_data: dict | None = None) -> None:
         """
         This will save to disk the current episode in self.episode_buffer.
@@ -874,8 +876,9 @@ class LeRobotDataset(torch.utils.data.Dataset):
         self._wait_image_writer()
         self._save_episode_table(episode_buffer, episode_index)
         ep_stats = compute_episode_stats(episode_buffer, self.features)
-
+        #print("self.meta.video_keys",self.meta.video_keys)
         if len(self.meta.video_keys) > 0:
+            print("???")
             video_paths = self.encode_episode_videos(episode_index)
             for key in self.meta.video_keys:
                 episode_buffer[key] = video_paths[key]

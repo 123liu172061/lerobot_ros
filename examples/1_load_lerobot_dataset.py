@@ -38,11 +38,14 @@ from lerobot.common.datasets.lerobot_dataset import LeRobotDataset, LeRobotDatas
 print("List of available datasets:")
 pprint(lerobot.available_datasets)
 
+print("??")
 # You can also browse through the datasets created/ported by the community on the hub using the hub api:
 hub_api = HfApi()
+print("??")
 repo_ids = [info.id for info in hub_api.list_datasets(task_categories="robotics", tags=["LeRobot"])]
+print("??")
 pprint(repo_ids)
-
+print("??")
 # Or simply explore them in your web browser directly at:
 # https://huggingface.co/datasets?other=LeRobot
 
